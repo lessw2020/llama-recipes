@@ -1,0 +1,1 @@
+torchrun --nnodes 1 --nproc_per_node 8  llama_finetuning.py --enable_fsdp --use_fast_kernels

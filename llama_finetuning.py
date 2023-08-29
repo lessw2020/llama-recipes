@@ -148,6 +148,7 @@ def main(**kwargs):
             sharding_strategy=fsdp_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
+            use_orig_params=train_config.use_orig_params,
             sync_module_states=train_config.low_cpu_fsdp,
             param_init_fn=lambda module: module.to_empty(device=torch.device("cuda"), recurse=False)
             if train_config.low_cpu_fsdp and rank != 0 else None,
@@ -156,6 +157,14 @@ def main(**kwargs):
             policies.apply_fsdp_checkpointing(model)
     elif not train_config.quantization and not train_config.enable_fsdp:
         model.to("cuda")
+
+    # torch. compile
+    if local_rank==0 and train_config.use_compile:
+        print(f"entering compile....")
+        model = torch.compile(model)
+    
+    dist.barrier()
+    print(f"{local_rank} rank finished compiling")
 
     dataset_config = generate_dataset_config(train_config, kwargs)
 
